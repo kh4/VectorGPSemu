@@ -45,10 +45,12 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags) {
   if (flags & MYI2C_SLAVE_ISTX) {
     switch (vectmode) {
       case 1: // fw version query, return 0x04/NAK
+        Serial.println("FW query!");
         *data=4;
         vectmode=0;
         return 0;
       case 2: // some other thing... return 0x01/NAK
+        Serial.println("? query!");
         *data=0x01;
         vectmode=0;
         return 0;
@@ -60,8 +62,10 @@ uint8_t slaveHandler(uint8_t *data, uint8_t flags) {
             databuf[7]++; // increase frame number
             stepTime(databuf + 29); // advance time too
             sendremain=37;
+            Serial.println("send GPS");
           } else {
             sendremain=8;
+            Serial.println("send MAG");
           }
           sendptr = &(databuf[0]);
           vectmode = 4;
