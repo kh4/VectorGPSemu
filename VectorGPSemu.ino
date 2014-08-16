@@ -131,6 +131,16 @@ char serbuf[20];
 uint8_t getbuf = 0;
 uint8_t serbuflen = 0;
 
+uint8_t to_nibble(uint8_t c) {
+  uint8_t r = tolower(c);
+  if (r>'9') {
+    r -= ('a'-10);
+  } else {
+    r -= '0';
+  }
+  return r;
+}
+
 void loop() {
   uint32_t now=millis();
   if ((now-lastgps)>100) {
@@ -147,10 +157,17 @@ void loop() {
         break;
       case 'g': // GPS coord "g[nsew]ddmmmmmm"
       case 'h': // HDOP      "hxx"
-      case 'a': // altitude  "a[-+]xxxxxxxx"
+      case 'a': // altitude  "axxxxxxxx[-+]"
       case 's': // speed     "sxxxxxxxx"
       case 'c': // course    "cxxxxx"
       case 'n': // sats      "nxx"
+      case '1': // flg0      "1xx"
+      case '2': // flg1      "2xx"
+      case '3': // flg2      "3xx"
+      case '4': // flg3      "4xx"
+      case 'x': // magx      "xxxxx"
+      case 'y': // magy      "yxxxx"
+      case 'z': // magz      "zxxxx"
         getbuf = 1;
         break;
     }
@@ -192,6 +209,57 @@ void loop() {
         } else if (ch=='h' && serbuflen==2) {
           databuf[16]=(0x10 * ((serbuf[0]-'0')&0x0f)) +
                      ((serbuf[1]-'0')&0x0f);
+        } else if (ch=='s' && serbuflen==8) {
+          for (uint8_t i=0; i<4; i++) {
+            databuf[20-i] = (0x10 * ((serbuf[i*2]-'0')&0x0f)) +
+                            ((serbuf[i*2+1]-'0')&0x0f);
+          }
+        } else if ((ch=='a') && ((serbuflen==8) || (serbuflen==9 && serbuf[8]=='-'))) {
+          for (uint8_t i=0; i<4; i++) {
+            databuf[27-i] = (0x10 * ((serbuf[i*2]-'0')&0x0f)) +
+                            ((serbuf[i*2+1]-'0')&0x0f);
+          }
+          if (serbuflen==9) {
+            // negative
+          } else {
+            // positive
+          }
+        } else if (ch=='n' && serbuflen==2) {
+          databuf[33]=(0x10 * ((serbuf[0]-'0')&0x0f)) +
+                     ((serbuf[1]-'0')&0x0f);
+        } else if (ch=='c' && serbuflen==5) {
+          databuf[23] = ((serbuf[0]-'0')&0x0f);
+          databuf[22] = (0x10 * ((serbuf[1]-'0')&0x0f)) +
+                        ((serbuf[2]-'0')&0x0f);
+          databuf[21] = (0x10 * ((serbuf[3]-'0')&0x0f)) +
+                        ((serbuf[4]-'0')&0x0f);
+        } else if (ch=='1' && serbuflen==2) {
+          databuf[28]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+        } else if (ch=='2' && serbuflen==2) {
+          databuf[34]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+        } else if (ch=='3' && serbuflen==2) {
+          databuf[35]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+        } else if (ch=='4' && serbuflen==2) {
+          databuf[36]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+        } else if (ch=='x' && serbuflen==4) {
+          databuf[0]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+          databuf[1]=(0x10 * (to_nibble(serbuf[2])&0x0f)) + 
+                      (to_nibble(serbuf[3])&0x0f);
+        } else if (ch=='y' && serbuflen==4) {
+          databuf[2]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+          databuf[3]=(0x10 * (to_nibble(serbuf[2])&0x0f)) + 
+                      (to_nibble(serbuf[3])&0x0f);
+        } else if (ch=='z' && serbuflen==4) {
+          databuf[4]=(0x10 * (to_nibble(serbuf[0])&0x0f)) + 
+                      (to_nibble(serbuf[1])&0x0f);
+          databuf[5]=(0x10 * (to_nibble(serbuf[2])&0x0f)) + 
+                      (to_nibble(serbuf[3])&0x0f);
         }
         getbuf=0;
       }
