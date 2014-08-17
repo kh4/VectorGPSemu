@@ -152,9 +152,6 @@ void loop() {
     char ch = Serial.read();
     ch = tolower(ch);
     switch (ch) {
-      case 'd':
-        dumpbuf(databuf,37);
-        break;
       case 'g': // GPS coord "g[nsew]ddmmmmmm"
       case 'h': // HDOP      "hxx"
       case 'a': // altitude  "axxxxxxxx[-+]"
@@ -220,9 +217,9 @@ void loop() {
                             ((serbuf[i*2+1]-'0')&0x0f);
           }
           if (serbuflen==9) {
-            // negative
+            databuf[34]|=0x80;
           } else {
-            // positive
+            databuf[34]&=~0x80;
           }
         } else if (ch=='n' && serbuflen==2) {
           databuf[33]=(0x10 * ((serbuf[0]-'0')&0x0f)) +
@@ -264,6 +261,9 @@ void loop() {
         getbuf=0;
       }
     }
+    delay(10);
+    while (Serial.available()) Serial.read();
+    dumpbuf(databuf,37);
   }
 }
 
